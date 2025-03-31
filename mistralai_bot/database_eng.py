@@ -29,7 +29,6 @@ class Requests(Base):
     id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
     tg_id: Mapped[str] = mapped_column(BigInteger(), ForeignKey('users.tg_id'))
     request: Mapped[str] = mapped_column(String())
-    file_tg_id: Mapped[str] = mapped_column(String())
     answer: Mapped[str] = mapped_column(String())
 
 
