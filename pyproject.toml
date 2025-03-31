@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "mistralai-bot"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+aiogram = "^3.13.0"
+apscheduler = "^3.10.4"
+art = "^6.2"
+colorama = "^0.4.6"
+psutil = "^6.0.0"
+requests = "^2.32.3"
+snscrape = "^0.7.0.20230622"
+sqlalchemy = "^2.0.34"
+ujson = "^5.10.0"
+python-dotenv = "^1.0.1"
+aiosqlite = "^0.20.0"
+mistralai = "^1.1.0"
+openai = "^1.60.0"
+telegramify-markdown = "^0.4.1"
+matplotlib = "^3.10.0"
+alembic = "^1.14.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
