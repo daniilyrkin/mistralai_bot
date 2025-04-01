@@ -18,7 +18,7 @@ load_dotenv()
 async def on_startup():
     try:
         await create_db()
-        text = 'Database is running!\nBot is running!'
+        text = 'Database is running!\nBot is running!\nGreat!'
         print(Fore.GREEN + text)
     except Exception as ex:
         text = str(ex)

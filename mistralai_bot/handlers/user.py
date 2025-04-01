@@ -97,27 +97,29 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
     await state.set_state(Load.load)
     mes = await message.answer('Загрузка...⏳')
     try:
-        data = {
-            "url": None}
+        """data = {"url": 'N/A'}"""
 
-        text = message.text
-        entities = message.entities
+        text = str(message.text)
+        """entities = message.entities
 
         for item in entities:
             if item.type in data.keys():
                 data[item.type] = item.extract_from(text)
 
+        if data['url'] != 'N/A':
+            text = str(text).replace(html.quote(data['url']), '')
+        else:
+            str(text)
         content_data = {
-            'text': str(text).replace(html.quote(data['url']), ''),
+            'text': text,
             'url': html.quote(data['url'])
-        }
-
+        }"""
         user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
 
         answer_mistral = await api_get(
             api_key=os.getenv('Mistral_API'),
             model=user_data.models,
-            content=content_data)
+            content=text)
 
         await orm_add(
             session=session, tablename='Requests',
@@ -125,7 +127,7 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                 'tg_id': message.from_user.id,
                 'answer':
                     (f'Mistral_AI:\n{answer_mistral}\n\n'),
-                'request': str(content_data)
+                'request': text
             }))
         for x in range(0, len(answer_mistral), 4096):
             txt = answer_mistral[x: x + 4096]

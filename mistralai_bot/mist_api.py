@@ -7,11 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-async def api_get(model: str, content: dict, api_key: str):
+async def api_get(model: str, content: str, api_key: str):
     client = Mistral(api_key=api_key)
 
     # Define the messages for the chat
-    if content['url'] is not None:
+    """if content['url'] is not None:
         if "pdf" in content["url"]:
             messages = [
                 {
@@ -38,7 +38,7 @@ async def api_get(model: str, content: dict, api_key: str):
             )
             print(ocr_response.pages[0].markdown)
             return
-            """messages = [
+            messages = [
                 {
                     "role": "user",
                     "content": [
@@ -52,19 +52,19 @@ async def api_get(model: str, content: dict, api_key: str):
                         }
                     ]
                 }
-            ]"""
-    else:
-        messages = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": str(content['text'])
-                    }
-                ]
-            }
-        ]
+            ]
+    else:"""
+    messages = [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": content
+                }
+            ]
+        }
+    ]
 
     # Get the chat response
     res = await client.chat.complete_async(
