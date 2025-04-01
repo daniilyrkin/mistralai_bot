@@ -116,27 +116,32 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                 'text': text,
                 'url': None
             }
-        user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
 
-        answer_mistral = await api_get(
-            api_key=os.getenv('Mistral_API'),
-            model=user_data.models,
-            content=content_data)
+        if content_data['url'] is None or 'pdf' in content_data['url']:
+            print(content_data['text'])
+            user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
 
-        txt = str(content_data['text'])
-        url = str(content_data['url'])
+            answer_mistral = await api_get(
+                api_key=os.getenv('Mistral_API'),
+                model=user_data.models,
+                content=content_data)
 
-        await orm_add(
-            session=session, tablename='Requests',
-            data=({
-                'tg_id': message.from_user.id,
-                'answer':
-                    (f'Mistral_AI:\n{answer_mistral}\n\n'),
-                'request': f'Text: {txt}\nUrl: {url}'
-            }))
-        for x in range(0, len(answer_mistral), 4096):
-            txt = answer_mistral[x: x + 4096]
-            await message.answer(txt, parse_mode='MarkdownV2')
+            txt = str(content_data['text'])
+            url = str(content_data['url'])
+
+            await orm_add(
+                session=session, tablename='Requests',
+                data=({
+                    'tg_id': message.from_user.id,
+                    'answer':
+                        (f'Mistral_AI:\n{answer_mistral}\n\n'),
+                    'request': f'Text: {txt}\nUrl: {url}'
+                }))
+            for x in range(0, len(answer_mistral), 4096):
+                txt = answer_mistral[x: x + 4096]
+                await message.answer(txt, parse_mode='MarkdownV2')
+        else:
+            await message.answer('Я умею работать только с ссылками на документ в формате pdf...')
     except Exception as ex:
         await bot.send_message(
             chat_id=int(ADMIN),

@@ -8,7 +8,7 @@ from collections import deque
 import json
 import os
 from dotenv import load_dotenv
-from mistralai_bot.orm_query import orm_get, orm_add
+from mistralai_bot.orm_query import orm_get
 from mistralai_bot.keyboards.keyboards import Keyboards_all as keyboards
 from mistralai_bot.utils.statistics_diogram import Diagram_creator
 from aiogram.filters import CommandObject
@@ -19,6 +19,7 @@ admin = Router()
 load_dotenv()
 
 ADMIN = int(os.getenv('ADMIN'))
+DOP_ID = int(os.getenv('DOP_ID'))
 admin.message.filter(F.chat.id.in_({ADMIN}))
 
 
@@ -42,7 +43,7 @@ async def users_list(message: Message, session: AsyncSession):
     await message.answer(text)
 
 
-@admin.message(Command('settings'))
+"""@admin.message(Command('settings'))
 async def settings_bot(message: Message, session: AsyncSession):
     keyboard = await keyboards.reply_key_builder(['/изменить_приветствие', '/посмотреть_приветствие '])
     await message.answer('Возможные настройки', reply_markup=keyboard)
@@ -56,7 +57,7 @@ async def change_greeting(message: Message, session: AsyncSession):
         tablename='User', session=session,
         filter_arg={'tg_id': user_id},
         new_data={'models': model[1]})
-    await callback.message.answer('Модель успешно выбрана!')
+    await callback.message.answer('Модель успешно выбрана!')"""
 
 
 @admin.message(Command('sending'))
@@ -67,33 +68,49 @@ async def sending_message_(message: Message, session: AsyncSession, state: FSMCo
 
 @admin.message(Sending_load.load)
 async def sending_message(message: Message, session: AsyncSession, state: FSMContext):
-    for ids in [ADMIN, 1969510258]:
-        await bot.send_poll(
-            chat_id=ids,
-            question=message.poll.question,
-            options=[option.text for option in message.poll.options],
-            is_anonymous=message.poll.is_anonymous,
-            type=message.poll.type,
-            correct_option_id=message.poll.correct_option_id,
-            explanation=message.poll.explanation)
-        await orm_add(
-            session=session,
-            tablename='Poll',
-            data=({
-                'question': str(message.poll.question),
-                'options': str([option.text for option in message.poll.options])
-            })
-        )
-    """for user in await orm_get(session=session, tablename='User'):
-        if user.tg_id:
-            text += (
-                f'ID: {user.tg_id}, Имя: {user.username}\n'
-                f'Модель: {user.models}\n')
-        else:
-            text = 'Пользователи не найдены'
-    await callback.message.answer('Модель успешно выбрана!')"""
+    i = 0
+    err_user = ''
+    for user in await orm_get(session=session, tablename='User'):
+        try:
+            if message.poll:
+                ...
+                """await bot.send_poll(
+                    chat_id=ids,
+                    question=message.poll.question,
+                    options=[option.text for option in message.poll.options],
+                    is_anonymous=message.poll.is_anonymous,
+                    type=message.poll.type,
+                    correct_option_id=message.poll.correct_option_id,
+                    explanation=message.poll.explanation)
+                await orm_add(
+                    session=session,
+                    tablename='Poll',
+                    data=({
+                        'question': str(message.poll.question),
+                        'options': str([option.text for option in message.poll.options])
+                    })
+                )"""
+            elif message.text:
+                await bot.send_message(
+                    chat_id=user.tg_id,
+                    text=message.text
+                )
+            """for user in await orm_get(session=session, tablename='User'):
+                if user.tg_id:
+                    text += (
+                        f'ID: {user.tg_id}, Имя: {user.username}\n'
+                        f'Модель: {user.models}\n')
+                else:
+                    text = 'Пользователи не найдены'
+            await callback.message.answer('Модель успешно выбрана!')"""
+            i = i + 1
+        except Exception as ex:
+            err_user += f'\nЮзер: @{user.username}\nОшибка: {str(ex)}'
+
     await state.clear()
-    await message.answer('Опрос отправлен')
+    await message.answer(
+        f'Отправлено, кол-во получивших человек {i}\n'
+        f'Пользователи с ошибкой: {err_user}')
 
 
 @admin.message(Command('requests'))
