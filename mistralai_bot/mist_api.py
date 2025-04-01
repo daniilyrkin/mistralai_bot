@@ -11,7 +11,7 @@ async def api_get(model: str, content: str, api_key: str):
     client = Mistral(api_key=api_key)
 
     # Define the messages for the chat
-    """if content['url'] is not None:
+    if content['url'] is not None:
         if "pdf" in content["url"]:
             messages = [
                 {
@@ -53,18 +53,18 @@ async def api_get(model: str, content: str, api_key: str):
                     ]
                 }
             ]
-    else:"""
-    messages = [
-        {
-            "role": "user",
-            "content": [
-                {
-                    "type": "text",
-                    "text": content
-                }
-            ]
-        }
-    ]
+    else:
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": str(content['text'])
+                    }
+                ]
+            }
+        ]
 
     # Get the chat response
     res = await client.chat.complete_async(
@@ -85,8 +85,9 @@ async def api_get(model: str, content: str, api_key: str):
 
 if __name__ == "__main__":
     url = input('Введи url: ')
+    text = input('Введи запрос: ')
     content = {
-        "text": "Что на фото?",
+        "text": str(text),
         "url": str(url)
     }
     asyncio.run(api_get(api_key=os.getenv('Mistral_API'), model="mistral-large-latest", content=content))

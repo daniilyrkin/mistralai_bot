@@ -97,29 +97,31 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
     await state.set_state(Load.load)
     mes = await message.answer('Загрузка...⏳')
     try:
-        """data = {"url": 'N/A'}"""
+        data = {"url": None}
 
         text = str(message.text)
-        """entities = message.entities
+        entities = message.entities
 
-        for item in entities:
-            if item.type in data.keys():
-                data[item.type] = item.extract_from(text)
-
-        if data['url'] != 'N/A':
-            text = str(text).replace(html.quote(data['url']), '')
+        if entities:
+            for item in entities:
+                if item.type in data.keys():
+                    data[item.type] = item.extract_from(text)
+                text = str(text).replace(html.quote(data['url']), '')
+                content_data = {
+                    'text': text,
+                    'url': html.quote(data['url'])
+                }
         else:
-            str(text)
-        content_data = {
-            'text': text,
-            'url': html.quote(data['url'])
-        }"""
+            content_data = {
+                'text': text,
+                'url': None
+            }
         user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
 
         answer_mistral = await api_get(
             api_key=os.getenv('Mistral_API'),
             model=user_data.models,
-            content=text)
+            content=content_data)
 
         await orm_add(
             session=session, tablename='Requests',
@@ -127,7 +129,7 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                 'tg_id': message.from_user.id,
                 'answer':
                     (f'Mistral_AI:\n{answer_mistral}\n\n'),
-                'request': text
+                'request': f'Text: {str(content_data['text'])}\nUrl: {str(content_data['url'])}'
             }))
         for x in range(0, len(answer_mistral), 4096):
             txt = answer_mistral[x: x + 4096]
