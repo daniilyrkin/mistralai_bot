@@ -19,7 +19,6 @@ admin = Router()
 load_dotenv()
 
 ADMIN = int(os.getenv('ADMIN'))
-DOP_ID = int(os.getenv('DOP_ID'))
 admin.message.filter(F.chat.id.in_({ADMIN}))
 
 
