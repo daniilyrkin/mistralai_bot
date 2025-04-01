@@ -123,13 +123,16 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
             model=user_data.models,
             content=content_data)
 
+        txt = str(content_data['text'])
+        url = str(content_data['url'])
+
         await orm_add(
             session=session, tablename='Requests',
             data=({
                 'tg_id': message.from_user.id,
                 'answer':
                     (f'Mistral_AI:\n{answer_mistral}\n\n'),
-                'request': f'Text: {str(content_data['text'])}\nUrl: {str(content_data['url'])}'
+                'request': f'Text: {txt}\nUrl: {url}'
             }))
         for x in range(0, len(answer_mistral), 4096):
             txt = answer_mistral[x: x + 4096]
