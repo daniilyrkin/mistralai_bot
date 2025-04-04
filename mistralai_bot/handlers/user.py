@@ -1,7 +1,6 @@
 from aiogram import Router, F, html
 from aiogram.filters import Command
-from aiogram.types import PollAnswer
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, PollAnswer
 from mistralai_bot.utils.logger import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.fsm.context import FSMContext
@@ -72,13 +71,6 @@ async def cancel_change_model(callback: CallbackQuery, session: AsyncSession):
     await callback.message.answer('Модель успешно выбрана!')
 
 
-@user_router.message(Load.load)
-async def load(message: Message):
-    mes = await message.answer('Ваше сообщение генерируется...')
-    await asyncio.sleep(2)
-    await mes.delete()
-
-
 @user_router.poll_answer()
 async def handle_poll_answer(poll_answer: PollAnswer):
     user_id = poll_answer.user.id
@@ -92,13 +84,27 @@ async def handle_poll_answer(poll_answer: PollAnswer):
         text=f"User {user_id} (@{user_name}) answered poll {poll_id} with options {option_ids}")
 
 
+@user_router.message(Load.load)
+async def load(message: Message):
+    mes = await message.answer('Ваш ответ генерируется...')
+    await asyncio.sleep(2)
+    await mes.delete()
+
+
+async def send_typing_action(chat_id):
+    await asyncio.sleep(1)
+    while True:
+        await bot.send_chat_action(chat_id, 'typing')
+        await asyncio.sleep(5)  # Отправляем действие каждые 5 секунд
+
+
 @user_router.message()
 async def echo(message: Message, session: AsyncSession, state: FSMContext):
     user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
     if user_data.models is not None:
         await state.set_state(Load.load)
-        mes = await message.answer('Загрузка...⏳')
         try:
+            typing_task = asyncio.create_task(send_typing_action(message.chat.id))
             data = {"url": None}
 
             text = str(message.text)
@@ -113,7 +119,8 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                 for item in entities:
                     if item.type in data.keys():
                         data[item.type] = item.extract_from(text)
-                        text = str(text).replace(html.quote(data['url']), '')
+                        text = text.replace(html.quote(data['url']), '')
+
                         if 'pdf' in html.quote(data['url']):
                             content_data = {
                                 'text': text,
@@ -133,8 +140,8 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                     'request': str(content_data['text']),
                     'url': str(content_data['url'])
                 }))
-            for x in range(0, len(answer_mistral), 4096):
-                txt = answer_mistral[x: x + 4096]
+            for x in range(0, len(answer_mistral), 4090):
+                txt = answer_mistral[x: x + 4090]
                 await message.answer(txt, parse_mode='MarkdownV2')
         except Exception as ex:
             await bot.send_message(
@@ -144,7 +151,7 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                 f'Текст ошибки: {str(ex)}')
             await message.answer('Ошибка на сервере, попробуйте позже...')
         finally:
-            await mes.delete()
+            typing_task.cancel()
             await state.clear()
     else:
         await message.answer('Выбири модель для продолжения...')
