@@ -124,7 +124,9 @@ async def get_requsts(message: Message, session: AsyncSession):
         requests_by_user[req.tg_id].append({
             'Time': req.created.isoformat(),
             'Request': req.request,
-            'Answer': req.answer
+            'Answer': req.answer,
+            'Url': req.url,
+            'file_id': req.file_id
         })
     for user in users:
         user_data = {

@@ -94,59 +94,61 @@ async def handle_poll_answer(poll_answer: PollAnswer):
 
 @user_router.message()
 async def echo(message: Message, session: AsyncSession, state: FSMContext):
-    await state.set_state(Load.load)
-    mes = await message.answer('Загрузка...⏳')
-    try:
-        data = {"url": None}
+    user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
+    if user_data.models is not None:
+        await state.set_state(Load.load)
+        mes = await message.answer('Загрузка...⏳')
+        try:
+            data = {"url": None}
 
-        text = str(message.text)
-        entities = message.entities
+            text = str(message.text)
+            entities = message.entities
 
-        if entities:
-            for item in entities:
-                if item.type in data.keys():
-                    data[item.type] = item.extract_from(text)
-                text = str(text).replace(html.quote(data['url']), '')
+            if entities:
+                for item in entities:
+                    if item.type in data.keys():
+                        data[item.type] = item.extract_from(text)
+                    text = str(text).replace(html.quote(data['url']), '')
+                    content_data = {
+                        'text': text,
+                        'url': html.quote(data['url'])
+                    }
+            else:
                 content_data = {
                     'text': text,
-                    'url': html.quote(data['url'])
+                    'url': None
                 }
-        else:
-            content_data = {
-                'text': text,
-                'url': None
-            }
 
-        if content_data['url'] is None or 'pdf' in content_data['url']:
-            print(content_data['text'])
-            user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
+            if content_data['url'] is None or 'pdf' in content_data['url']:
 
-            answer_mistral = await api_get(
-                api_key=os.getenv('Mistral_API'),
-                model=user_data.models,
-                content=content_data)
+                answer_mistral = await api_get(
+                    api_key=os.getenv('Mistral_API'),
+                    model=user_data.models,
+                    content=content_data)
 
-            txt = str(content_data['text'])
-            url = str(content_data['url'])
-
-            await orm_add(
-                session=session, tablename='Requests',
-                data=({
-                    'tg_id': message.from_user.id,
-                    'answer':
-                        (f'Mistral_AI:\n{answer_mistral}\n\n'),
-                    'request': f'Text: {txt}\nUrl: {url}'
-                }))
-            for x in range(0, len(answer_mistral), 4096):
-                txt = answer_mistral[x: x + 4096]
-                await message.answer(txt, parse_mode='MarkdownV2')
-        else:
-            await message.answer('Я умею работать только с ссылками на документ в формате pdf...')
-    except Exception as ex:
-        await bot.send_message(
-            chat_id=int(ADMIN),
-            text=f'Ошибка по запросу: {message.text}\nТекст ошибки: {str(ex)}')
-        await message.answer('Ошибка на сервере, попробуйте позже...')
-    finally:
-        await mes.delete()
-        await state.clear()
+                await orm_add(
+                    session=session, tablename='Requests',
+                    data=({
+                        'tg_id': message.from_user.id,
+                        'answer': (f'Mistral_AI:\n{answer_mistral}\n\n'),
+                        'request': str(content_data['text']),
+                        'url': str(content_data['url'])
+                    }))
+                for x in range(0, len(answer_mistral), 4096):
+                    txt = answer_mistral[x: x + 4096]
+                    await message.answer(txt, parse_mode='MarkdownV2')
+            else:
+                await message.answer('Я умею работать только с ссылками на документ в формате pdf...')
+        except Exception as ex:
+            await bot.send_message(
+                chat_id=int(ADMIN),
+                text=f'Ошибка по запросу: {message.text}\n'
+                f'Пользователь: @{message.from_user.username}'
+                f'Текст ошибки: {str(ex)}')
+            await message.answer('Ошибка на сервере, попробуйте позже...')
+        finally:
+            await mes.delete()
+            await state.clear()
+    else:
+        await message.answer('Выбири модель для продолжения...')
+        await change_model(message)
