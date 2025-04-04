@@ -104,46 +104,43 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
             text = str(message.text)
             entities = message.entities
 
+            content_data = {
+                'text': text,
+                'url': None
+            }
+
             if entities:
                 for item in entities:
                     if item.type in data.keys():
                         data[item.type] = item.extract_from(text)
-                    text = str(text).replace(html.quote(data['url']), '')
-                    content_data = {
-                        'text': text,
-                        'url': html.quote(data['url'])
-                    }
-            else:
-                content_data = {
-                    'text': text,
-                    'url': None
-                }
+                        text = str(text).replace(html.quote(data['url']), '')
+                        if 'pdf' in html.quote(data['url']):
+                            content_data = {
+                                'text': text,
+                                'url': html.quote(data['url'])
+                            }
 
-            if content_data['url'] is None or 'pdf' in content_data['url']:
+            answer_mistral = await api_get(
+                api_key=os.getenv('Mistral_API'),
+                model=user_data.models,
+                content=content_data)
 
-                answer_mistral = await api_get(
-                    api_key=os.getenv('Mistral_API'),
-                    model=user_data.models,
-                    content=content_data)
-
-                await orm_add(
-                    session=session, tablename='Requests',
-                    data=({
-                        'tg_id': message.from_user.id,
-                        'answer': (f'Mistral_AI:\n{answer_mistral}\n\n'),
-                        'request': str(content_data['text']),
-                        'url': str(content_data['url'])
-                    }))
-                for x in range(0, len(answer_mistral), 4096):
-                    txt = answer_mistral[x: x + 4096]
-                    await message.answer(txt, parse_mode='MarkdownV2')
-            else:
-                await message.answer('Я умею работать только с ссылками на документ в формате pdf...')
+            await orm_add(
+                session=session, tablename='Requests',
+                data=({
+                    'tg_id': message.from_user.id,
+                    'answer': (f'Mistral_AI:\n{answer_mistral}\n\n'),
+                    'request': str(content_data['text']),
+                    'url': str(content_data['url'])
+                }))
+            for x in range(0, len(answer_mistral), 4096):
+                txt = answer_mistral[x: x + 4096]
+                await message.answer(txt, parse_mode='MarkdownV2')
         except Exception as ex:
             await bot.send_message(
                 chat_id=int(ADMIN),
                 text=f'Ошибка по запросу: {message.text}\n'
-                f'Пользователь: @{message.from_user.username}'
+                f'Пользователь: @{message.from_user.username}\n'
                 f'Текст ошибки: {str(ex)}')
             await message.answer('Ошибка на сервере, попробуйте позже...')
         finally:
