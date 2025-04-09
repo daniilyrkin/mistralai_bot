@@ -1,5 +1,6 @@
 import logging.handlers
 from aiogram import Dispatcher
+import os
 
 from art import tprint
 from colorama import Fore, init
@@ -15,6 +16,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+ADMIN = int(os.getenv('ADMIN'))
+
+
 async def on_startup():
     try:
         await create_db()
@@ -23,6 +27,7 @@ async def on_startup():
     except Exception as ex:
         text = str(ex)
         print(Fore.RED + text)
+    await bot.send_message(chat_id=ADMIN, text=text)
 
 
 async def main():
