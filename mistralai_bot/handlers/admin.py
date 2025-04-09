@@ -26,7 +26,7 @@ admin.message.filter(F.chat.id.in_({ADMIN}))
 async def admin_comands(message: Message):
     keyboard = await keyboards.reply_key_builder(
         ['/users', '/requests', '/logs', '/statistics month', '/statistics day', '/settings'])
-    await message.answer('Админ панель для тебя', reply_markup=keyboard)
+    await message.answer('Админ панель для админа', reply_markup=keyboard)
 
 
 @admin.message(Command('users'))
