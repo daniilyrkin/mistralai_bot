@@ -140,8 +140,8 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
                     'request': str(content_data['text']),
                     'url': str(content_data['url'])
                 }))
-            for x in range(0, len(answer_mistral), 4090):
-                txt = answer_mistral[x: x + 4090]
+            for x in range(0, len(answer_mistral), 4096):
+                txt = answer_mistral[x: x + 4096]
                 await message.answer(txt, parse_mode='MarkdownV2')
         except Exception as ex:
             await bot.send_message(
