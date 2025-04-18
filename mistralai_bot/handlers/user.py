@@ -29,7 +29,7 @@ models = {
 async def help(message: Message, session: AsyncSession):
     username = message.from_user.username
     user_id = message.from_user.id
-    keyboard = await keyboards.reply_key_builder(['Выбрать модель', 'Промпты'])
+    keyboard = await keyboards.reply_key_builder('Выбрать модель''Промпты')
     await orm_add(
         session=session, tablename='User',
         data=({
