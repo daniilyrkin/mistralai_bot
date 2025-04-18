@@ -29,7 +29,7 @@ models = {
 async def help(message: Message, session: AsyncSession):
     username = message.from_user.username
     user_id = message.from_user.id
-    keyboard = await keyboards.reply_key_builder('Выбрать модель', 'Промпты')
+    keyboard = await keyboards.reply_key_builder(['Выбрать модель', 'Промпты'])
     await orm_add(
         session=session, tablename='User',
         data=({
@@ -37,11 +37,11 @@ async def help(message: Message, session: AsyncSession):
             'role': 'user'}))
     await message.answer(
         text=f"Приветствую {message.from_user.first_name}!\n"
-        "Я бо, взаимодействующий с API MistralAI. Все бесплатно, но на твоих запросах они будут обучать свой ИИ 🌚\n"
+        "Я бот, взаимодействующий с API MistralAI. Все бесплатно, но на твоих запросах они будут обучать свой ИИ 🌚\n"
         "Так же ИИ не запоминает последнее сообщение и может нести не связанную бессмыслицу.\n"
         "Нажми кнопку *Выбрать модель* и выбери модель, чтобы начать работу.\n"
         "После выбора модели можете сразу писать боту свой запрос\n"
-        "Это не официальный бот MistralAI !!!",
+        "Это не официальный бот MistralAI !!!!!",
         parse_mode='Markdown',
         reply_markup=keyboard)
     await logger(message, text=message.text)
