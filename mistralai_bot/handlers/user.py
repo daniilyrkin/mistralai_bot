@@ -41,7 +41,7 @@ async def help(message: Message, session: AsyncSession):
         "Так же ИИ не запоминает последнее сообщение и может нести не связанную бессмыслицу.\n"
         "Нажми кнопку *Выбрать модель* и выбери модель, чтобы начать работу.\n"
         "После выбора модели можете сразу писать боту свой запрос\n"
-        "Это не официальный бот MistralAI !!!!!",
+        "Это не официальный бот MistralAI !!!",
         parse_mode='Markdown',
         reply_markup=keyboard)
     await logger(message, text=message.text)
