@@ -29,7 +29,7 @@ models = {
 async def help(message: Message, session: AsyncSession):
     username = message.from_user.username
     user_id = message.from_user.id
-    keyboard = await keyboards.reply_key_builder('Выбрать модель')
+    keyboard = await keyboards.reply_key_builder('Выбрать модель', 'Промпты')
     await orm_add(
         session=session, tablename='User',
         data=({
@@ -84,18 +84,22 @@ async def handle_poll_answer(poll_answer: PollAnswer):
         text=f"User {user_id} (@{user_name}) answered poll {poll_id} with options {option_ids}")
 
 
+# Ответ бота на сообщение
+
+
 @user_router.message(Load.load)
 async def load(message: Message):
-    mes = await message.answer('Ваш ответ генерируется...')
+    mes = await message.answer('Подожди, я еще не ответил...')
     await asyncio.sleep(2)
     await mes.delete()
 
 
+# Ожидание ответа от бота
 async def send_typing_action(chat_id):
     await asyncio.sleep(1)
     while True:
         await bot.send_chat_action(chat_id, 'typing')
-        await asyncio.sleep(5)  # Отправляем действие каждые 5 секунд
+        await asyncio.sleep(5)
 
 
 @user_router.message()
