@@ -57,12 +57,7 @@ async def api_get(model: str, content: str, api_key: str):
         messages = [
             {
                 "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": str(content['text'])
-                    }
-                ]
+                "content": str(content['text'])
             }
         ]
 
@@ -78,6 +73,7 @@ async def api_get(model: str, content: str, api_key: str):
             print(chunk.data.choices[0].delta.content, end="")
     print('\n')"""
     # complete content
+
     if res is not None:
         escape_text = telegramify_markdown.markdownify(
             res.choices[0].message.content, latex_escape=True, normalize_whitespace=False)

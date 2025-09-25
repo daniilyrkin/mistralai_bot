@@ -20,7 +20,7 @@ user_router = Router()
 
 models = {
     'codestral': 'cg.codestral-latest',
-    'mistral-large': 'cg.mistral-large-latest',
+    'mistral-medium': 'cg.mistral-medium-2505',
     'mistral-small': 'cg.mistral-small-latest'
 }
 
@@ -54,7 +54,7 @@ async def change_model(message: Message):
         text=(
             'Поясню по кнопкам.\n'
             '*codestral* - ИИ будет лучше работать с кодом.\n'
-            '*mistral-large* - ИИ будет работать лучше с текстом\n'
+            '*mistral-medium* - ИИ будет работать лучше с текстом\n'
             '*mistral-small* - ИИ работает быстрее, но есть нюансы...'),
         parse_mode='Markdown',
         reply_markup=keyboard)
