@@ -43,8 +43,8 @@ async def orm_update(session: AsyncSession, tablename: str, filter_arg: dict, ne
         await session.commit()
 
 
-async def orm_delete(session: AsyncSession, tablename: str, **kwargs):
-    item = await session.scalar(select(dict_tables[tablename]).filter_by(**kwargs))
+async def orm_delete(session: AsyncSession, tablename: str, del_obj: dict):
+    item = await session.scalar(select(dict_tables[tablename]).filter_by(**del_obj))
     if item:
-        await session.execute(delete(dict_tables[tablename]).filter_by(**kwargs))
+        await session.execute(delete(dict_tables[tablename]).filter_by(**del_obj))
         await session.commit()

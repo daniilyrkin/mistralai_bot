@@ -8,7 +8,7 @@ from collections import deque
 import json
 import os
 from dotenv import load_dotenv
-from mistralai_bot.orm_query import orm_get, orm_add, orm_update
+from mistralai_bot.orm_query import orm_get, orm_add, orm_update, orm_delete
 from mistralai_bot.keyboards.keyboards import Keyboards_all as keyboards
 from mistralai_bot.utils.statistics_diogram import Diagram_creator
 from aiogram.filters import CommandObject
@@ -202,6 +202,14 @@ async def cancel_update_model(message: Message, session: AsyncSession, state: FS
         new_data={'name': str(new_name)})
     await state.clear()
     await message.answer('Название модели успешно измененно!')
+
+
+@admin.message(Command('del_model'))
+async def del_model(message: Message, session: AsyncSession, command: CommandObject):
+    command_args: str = command.args
+    await orm_delete(
+        session=session, tablename='Models', del_obj={'name': command_args})
+    await message.answer("Модель успешно добавлена!")
 
 
 @admin.message(Command('list_models'))
