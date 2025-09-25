@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 from aiogram.types.input_file import FSInputFile, BufferedInputFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.fsm.context import FSMContext
@@ -8,11 +8,11 @@ from collections import deque
 import json
 import os
 from dotenv import load_dotenv
-from mistralai_bot.orm_query import orm_get
+from mistralai_bot.orm_query import orm_get, orm_add, orm_update
 from mistralai_bot.keyboards.keyboards import Keyboards_all as keyboards
 from mistralai_bot.utils.statistics_diogram import Diagram_creator
 from aiogram.filters import CommandObject
-from mistralai_bot.state.states import Sending_load
+from mistralai_bot.state.states import Sending_load, Update_model_state
 from mistralai_bot.config import bot
 
 admin = Router()
@@ -25,8 +25,13 @@ admin.message.filter(F.chat.id.in_({ADMIN}))
 @admin.message(Command('admin'))
 async def admin_comands(message: Message):
     keyboard = await keyboards.reply_key_builder(
-        ['/users', '/requests', '/logs', '/statistics month', '/statistics day', '/settings'])
-    await message.answer('Админ панель', reply_markup=keyboard)
+        ['/users', '/requests', '/logs', '/statistics month',
+         '/statistics day', '/settings', '/update_model',
+         '/list_models'])
+    await message.answer(
+        text=('Админ панель.\n'
+              'Комманда /add_model прописывается вручную с аргументами'),
+        reply_markup=keyboard)
 
 
 @admin.message(Command('users'))
@@ -153,6 +158,61 @@ async def statistics(message: Message, session: AsyncSession, command: CommandOb
     plot_buf = Diagram_creator(data).plot_statistics(time=command_args)
     plot_input_file = BufferedInputFile(plot_buf.getvalue(), filename="statistics.png")
     await message.answer_photo(plot_input_file)
+
+
+@admin.message(Command('add_model'))
+async def add_model(message: Message, session: AsyncSession, command: CommandObject):
+    command_args: str = command.args
+    await orm_add(
+        session=session, tablename='Models',
+        data=({
+            'name': command_args
+        }))
+    await message.answer("Модель успешно добавлена!")
+
+
+@admin.message(Command('update_model'))
+async def start_update_model(message: Message, session: AsyncSession):
+    models = {}
+    for model in await orm_get(session=session, tablename='Models'):
+        models[model.name] = ('update_model.' + str(model.id))
+    keyboard = await keyboards.inline_key_builder(models)
+    await message.answer(
+        text=(
+            'Выберите модель из списка.'),
+        parse_mode='Markdown',
+        reply_markup=keyboard)
+
+
+@admin.callback_query(F.data.startswith('update_model'))
+async def new_name_model(callback: CallbackQuery, state: FSMContext):
+    model = callback.data.split('.')
+    await state.update_data(model=model[1])
+    await callback.message.answer('Введи название модели')
+    await state.set_state(Update_model_state.load)
+
+
+@admin.message(Update_model_state.load)
+async def cancel_update_model(message: Message, session: AsyncSession, state: FSMContext):
+    new_name = message.text
+    data_state = await state.get_data()
+    await orm_update(
+        session=session, tablename='Models',
+        filter_arg={'id': int(data_state['model'])},
+        new_data={'name': str(new_name)})
+    await state.clear()
+    await message.answer('Название модели успешно измененно!')
+
+
+@admin.message(Command('list_models'))
+async def list_models(message: Message, session: AsyncSession):
+    models = ''
+    for model in await orm_get(session=session, tablename='Models'):
+        models += f'\n{model.name}'
+    await message.answer(
+        text=(
+            f'Все модели: {models}'),
+        parse_mode='Markdown')
 
 
 @admin.message(Command('logs'))

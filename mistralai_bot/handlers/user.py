@@ -4,7 +4,7 @@ from aiogram.types import Message, CallbackQuery, PollAnswer
 from mistralai_bot.utils.logger import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 from aiogram.fsm.context import FSMContext
-from mistralai_bot.orm_query import orm_add, orm_get_one, orm_update
+from mistralai_bot.orm_query import orm_add, orm_get_one, orm_update, orm_get
 from mistralai_bot.mist_api import api_get
 from mistralai_bot.state.states import Load
 from mistralai_bot.keyboards.keyboards import Keyboards_all as keyboards
@@ -17,12 +17,6 @@ load_dotenv()
 
 ADMIN = int(os.getenv('ADMIN'))
 user_router = Router()
-
-models = {
-    'codestral': 'cg.codestral-latest',
-    'mistral-medium': 'cg.mistral-medium-2505',
-    'mistral-small': 'cg.mistral-small-latest'
-}
 
 
 @user_router.message(Command('start', 'help', 'menu'))
@@ -48,14 +42,14 @@ async def help(message: Message, session: AsyncSession):
 
 
 @user_router.message(F.text == 'Выбрать модель')
-async def change_model(message: Message):
+async def change_model(message: Message, session: AsyncSession):
+    models = {}
+    for model in await orm_get(session=session, tablename='Models'):
+        models[model.name] = ('cg.' + str(model.id))
     keyboard = await keyboards.inline_key_builder(models)
     await message.answer(
         text=(
-            'Поясню по кнопкам.\n'
-            '*codestral* - ИИ будет лучше работать с кодом.\n'
-            '*mistral-medium* - ИИ будет работать лучше с текстом\n'
-            '*mistral-small* - ИИ работает быстрее, но есть нюансы...'),
+            'Выберите модель из списка.'),
         parse_mode='Markdown',
         reply_markup=keyboard)
 
@@ -67,7 +61,7 @@ async def cancel_change_model(callback: CallbackQuery, session: AsyncSession):
     await orm_update(
         tablename='User', session=session,
         filter_arg={'tg_id': user_id},
-        new_data={'models': model[1]})
+        new_data={'models': int(model[1])})
     await callback.message.answer('Модель успешно выбрана!')
 
 
@@ -106,6 +100,7 @@ async def send_typing_action(chat_id):
 async def echo(message: Message, session: AsyncSession, state: FSMContext):
     user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
     if user_data.models is not None:
+        model = await orm_get_one(session=session, tablename='Models', kwargs=({'id': user_data.models}))
         await state.set_state(Load.load)
         try:
             typing_task = asyncio.create_task(send_typing_action(message.chat.id))
@@ -133,7 +128,7 @@ async def echo(message: Message, session: AsyncSession, state: FSMContext):
 
             answer_mistral = await api_get(
                 api_key=os.getenv('Mistral_API'),
-                model=user_data.models,
+                model=model.name,
                 content=content_data)
 
             await orm_add(

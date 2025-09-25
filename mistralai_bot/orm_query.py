@@ -1,11 +1,12 @@
 from sqlalchemy import select, delete, insert, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from mistralai_bot.database_eng import User, Requests, Poll, PollAnswer
+from mistralai_bot.database_eng import User, Requests, Poll, PollAnswer, Models
 
 
 dict_tables = {
     'User': User,
+    'Models': Models,
     'Requests': Requests,
     'Poll': Poll,
     'PollAnswer': PollAnswer}

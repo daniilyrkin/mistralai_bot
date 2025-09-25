@@ -7,3 +7,7 @@ class Load(StatesGroup):
 
 class Sending_load(StatesGroup):
     load = State()
+
+
+class Update_model_state(StatesGroup):
+    load = State()
