@@ -30,7 +30,7 @@ class Requests(Base):
     tg_id: Mapped[str] = mapped_column(BigInteger(), ForeignKey('users.tg_id'))
     request: Mapped[str] = mapped_column(String())
     url: Mapped[str] = mapped_column(String(), nullable=True)
-    file_id: Mapped[int] = mapped_column(String(), nullable=True)
+    # file_id: Mapped[int] = mapped_column(String(), nullable=True)
     answer: Mapped[str] = mapped_column(String())
 
 
