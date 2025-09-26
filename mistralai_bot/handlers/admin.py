@@ -30,7 +30,8 @@ async def admin_comands(message: Message):
          '/list_models'])
     await message.answer(
         text=('Админ панель.\n'
-              'Комманда /add_model прописывается вручную с аргументами'),
+              'Комманда /add_model прописывается вручную с аргументами'
+              'Комманда /del_model прописывается вручную с аргументами'),
         reply_markup=keyboard)
 
 
@@ -209,7 +210,7 @@ async def del_model(message: Message, session: AsyncSession, command: CommandObj
     command_args: str = command.args
     await orm_delete(
         session=session, tablename='Models', del_obj={'name': command_args})
-    await message.answer("Модель успешно добавлена!")
+    await message.answer("Модель успешно удалена!")
 
 
 @admin.message(Command('list_models'))

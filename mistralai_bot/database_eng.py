@@ -19,7 +19,7 @@ class User(Base):
 
     tg_id: Mapped[int] = mapped_column(BigInteger(), primary_key=True)
     username: Mapped[str] = mapped_column(String(100))
-    models: Mapped[int] = mapped_column(Integer(), ForeignKey('users.tg_id'), nullable=True)
+    models: Mapped[int] = mapped_column(Integer(), ForeignKey('models.id'), nullable=True)
     role: Mapped[str] = mapped_column(String(100))
 
 
