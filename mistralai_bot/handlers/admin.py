@@ -26,8 +26,7 @@ admin.message.filter(F.chat.id.in_({ADMIN}))
 async def admin_comands(message: Message):
     keyboard = await keyboards.reply_key_builder(
         ['/users', '/requests', '/logs', '/statistics month',
-         '/statistics day', '/settings', '/update_model',
-         '/list_models'])
+         '/statistics day', '/settings', '/update_model'])
     await message.answer(
         text=('Админ панель.\n'
               'Комманда /add_model прописывается вручную с аргументами'
@@ -211,17 +210,6 @@ async def del_model(message: Message, session: AsyncSession, command: CommandObj
     await orm_delete(
         session=session, tablename='Models', del_obj={'name': command_args})
     await message.answer("Модель успешно удалена!")
-
-
-@admin.message(Command('list_models'))
-async def list_models(message: Message, session: AsyncSession):
-    models = ''
-    for model in await orm_get(session=session, tablename='Models'):
-        models += f'\n{model.name}'
-    await message.answer(
-        text=(
-            f'Все модели: {models}'),
-        parse_mode='Markdown')
 
 
 @admin.message(Command('logs'))
