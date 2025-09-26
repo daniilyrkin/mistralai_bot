@@ -41,7 +41,8 @@ async def help(message: Message, session: AsyncSession):
     await logger(message, text=message.text)
 
 
-@user_router.message(F.text == 'Выбрать модель' or Command('models'))
+@user_router.message(F.text == 'Выбрать модель')
+@user_router.message(Command('models'))
 async def change_model(message: Message, session: AsyncSession):
     models = {}
     for model in await orm_get(session=session, tablename='Models'):
