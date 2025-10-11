@@ -41,6 +41,16 @@ async def help(message: Message, session: AsyncSession):
     await logger(message, text=message.text)
 
 
+@user_router.message(Command('info'))
+async def info_user(message: Message, session: AsyncSession):
+    user_data = await orm_get_one(session=session, tablename='User', kwargs=({'tg_id': message.from_user.id}))
+    if user_data.models is not None:
+        model = await orm_get_one(session=session, tablename='Models', kwargs=({'id': user_data.models}))
+    print(user_data.models)
+    await message.answer(
+        text=f"Имя: {user_data.username}\nВыбранная модель: {model.name}")
+
+
 @user_router.message(F.text == 'Выбрать модель')
 @user_router.message(Command('models'))
 async def change_model(message: Message, session: AsyncSession):
