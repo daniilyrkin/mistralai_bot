@@ -8,7 +8,7 @@ from collections import deque
 import json
 import os
 from dotenv import load_dotenv
-from mistralai_bot.orm_query import orm_get, orm_add, orm_update, orm_delete
+from mistralai_bot.orm_query import orm_get, orm_add, orm_update, orm_delete, orm_get_latest_record
 from mistralai_bot.keyboards.keyboards import Keyboards_all as keyboards
 from mistralai_bot.utils.statistics_diogram import Diagram_creator
 from aiogram.filters import CommandObject
@@ -29,7 +29,7 @@ async def admin_comands(message: Message):
          '/statistics day', '/settings', '/update_model'])
     await message.answer(
         text=('Админ панель.\n'
-              'Комманда /add_model прописывается вручную с аргументами'
+              'Комманда /add_model прописывается вручную с аргументами\n'
               'Комманда /del_model прописывается вручную с аргументами'),
         reply_markup=keyboard)
 
@@ -121,7 +121,7 @@ async def sending_message(message: Message, session: AsyncSession, state: FSMCon
 async def get_requsts(message: Message, session: AsyncSession):
     data = []
     users = await orm_get(session=session, tablename='User')
-    requests = await orm_get(session=session, tablename='Requests', desc_bool=True)
+    requests = await orm_get(session=session, tablename='Requests')
     requests_by_user = {}
     for req in requests:
         if req.tg_id not in requests_by_user:
@@ -210,6 +210,23 @@ async def del_model(message: Message, session: AsyncSession, command: CommandObj
     await orm_delete(
         session=session, tablename='Models', del_obj={'name': command_args})
     await message.answer("Модель успешно удалена!")
+
+
+@admin.message(Command('vip_switch'))
+async def vip_switch(message: Message, session: AsyncSession, command: CommandObject):
+    command_args: int = int(command.args)
+    user_data = await orm_get_latest_record(
+        session=session, tablename='User', filters=({'tg_id': command_args})
+    )
+    vip_data = not user_data.vip
+    await orm_update(
+        tablename='User', session=session,
+        filter_arg={'tg_id': command_args},
+        new_data={'vip': vip_data})
+    if vip_data is True:
+        await message.answer('VIP активирован.')
+    else:
+        await message.answer('VIP деактвирован.')
 
 
 @admin.message(Command('logs'))

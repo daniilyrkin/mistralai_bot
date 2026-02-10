@@ -1,8 +1,13 @@
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine, AsyncAttrs
-from sqlalchemy import DateTime, String, BigInteger, ForeignKey, Integer, NullPool
+from sqlalchemy import DateTime, String, BigInteger, ForeignKey, Integer, NullPool, Boolean, select, insert
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from zoneinfo import ZoneInfo
 from datetime import datetime
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+ADMIN = int(os.getenv('ADMIN'))
 
 engine = create_async_engine('sqlite+aiosqlite:///mistralai_bot/db.sqlite3', poolclass=NullPool)
 
@@ -21,9 +26,11 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(100))
     models: Mapped[int] = mapped_column(Integer(), nullable=True)
     role: Mapped[str] = mapped_column(String(100))
+    vip: Mapped[bool] = mapped_column(Boolean(), default=False)
+    gigachat_switch: Mapped[bool] = mapped_column(Boolean(), default=False)
 
 
-class Models(Base):
+class Models_mistral(Base):
     __tablename__ = "models"
 
     id: Mapped[int] = mapped_column(Integer(), primary_key=True)
@@ -41,32 +48,24 @@ class Requests(Base):
     answer: Mapped[str] = mapped_column(String())
 
 
-class Poll(Base):
-    __tablename__ = "poll"
-
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
-    question: Mapped[str] = mapped_column(String(100))
-    options: Mapped[str] = mapped_column(String())
-    user_answer_pool: Mapped[int] = mapped_column(Integer(), nullable=True)
-
-
-class PollAnswer(Base):
-    __tablename__ = "poll_answer"
-
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
-    poll_id: Mapped[int] = mapped_column(Integer(), ForeignKey('poll.id'))
-    tg_id: Mapped[int] = mapped_column(Integer(), ForeignKey('users.tg_id'))
-    option: Mapped[int] = mapped_column(Integer())
-
-
-class Settings(Base):
-    __tablename__ = "settings"
-
-    id: Mapped[int] = mapped_column(Integer(), primary_key=True, autoincrement=True)
-    settings_name: Mapped[str] = mapped_column(String())
-    volume: Mapped[str] = mapped_column(String())
-
-
 async def create_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+        result = await conn.execute(select(Models_mistral))
+        models_exist = result.scalars().first() is not None
+
+        if not models_exist:
+            # Добавляем данные в таблицу models, если она пустая
+            await conn.execute(insert(Models_mistral).values([
+                {"name": "mistral-small-latest"}]))
+
+        result = await conn.execute(select(User))
+        users_exist = result.scalars().first() is not None
+
+        if not users_exist:
+            await conn.execute(insert(User).values([
+                {"tg_id": int(ADMIN), "username": "daniila_22", "role": "admin", "vip": True},
+            ]))
+
+        await conn.commit()

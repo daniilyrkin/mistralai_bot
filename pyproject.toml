@@ -23,6 +23,7 @@ openai = "^1.60.0"
 telegramify-markdown = "^0.4.1"
 matplotlib = "^3.10.0"
 alembic = "^1.14.1"
+gigachat = "^0.2.0"
 
 
 [build-system]
